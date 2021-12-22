@@ -24,9 +24,12 @@ class RealSenseVis(object):
         self.point_cloud.colors = pcd.colors
 
         if not self.added_pc and len(np.asarray(pcd.points)) > 0:
-            self.vis.add_geometry(self.point_cloud)
+            self.add_pcd(self.point_cloud)
             self.added_pc = True
 
         self.vis.update_geometry(self.point_cloud)
         self.vis.poll_events()
         self.vis.update_renderer()
+
+    def add_pcd(self, pcd):
+        self.vis.add_geometry(pcd)

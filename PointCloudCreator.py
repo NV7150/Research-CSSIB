@@ -24,3 +24,6 @@ def create_point_cloud(color_image, depth_image, intrinsics, depth_scale=1000):
 
     return pcd
 
+
+def load_pcd(filename):
+    return o3d.io.read_point_cloud(filename)
