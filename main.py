@@ -1,16 +1,25 @@
-# This is a sample Python script.
-
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
-
-
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
+from BgProcessor import BgProcessor
+from RealSense import RealSense
+from RealSenseVis import RealSenseVis
+from PointCloudCreator import create_point_cloud
 
 
-# Press the green button in the gutter to run the script.
+def simple_scan_vis():
+    bg_processor = BgProcessor()
+
+    with RealSense() as real_sense:
+        with RealSenseVis() as rs_vis:
+            while True:
+                (rgb, depth, ins) = real_sense.get_frame_image()
+
+                if rgb is None or depth is None or ins is None:
+                    continue
+
+                (rgb, depth) = bg_processor(rgb, depth)
+                pcd = create_point_cloud(rgb, depth, ins)
+
+                rs_vis.visualize_current(pcd)
+
+
 if __name__ == '__main__':
-    print_hi('PyCharm')
-
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+    simple_scan_vis()
