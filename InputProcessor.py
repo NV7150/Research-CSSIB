@@ -42,5 +42,8 @@ class InputProcessor(threading.Thread):
         while True:
             input_s = input()
             self.input_pool.push(input_s)
+            if input_s == 'exit':
+                break
+
 
 
