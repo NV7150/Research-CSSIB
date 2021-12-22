@@ -1,4 +1,5 @@
 from BgProcessor import BgProcessor
+from InputProcessor import InputProcessor, InputPool
 from RealSense import RealSense
 from RealSenseVis import RealSenseVis
 from PointCloudCreator import create_point_cloud, load_pcd
@@ -6,6 +7,9 @@ from PointCloudCreator import create_point_cloud, load_pcd
 
 def simple_scan_vis():
     bg_processor = BgProcessor()
+    queue = InputPool()
+    input_s = InputProcessor("input", queue)
+    input_s.start()
 
     with RealSense() as real_sense:
         with RealSenseVis() as rs_vis:
@@ -21,6 +25,9 @@ def simple_scan_vis():
                 pcd = create_point_cloud(rgb, depth, ins)
 
                 rs_vis.visualize_current(pcd)
+
+                while queue.length() > 0:
+                    print(queue.shift())
 
 
 if __name__ == '__main__':
