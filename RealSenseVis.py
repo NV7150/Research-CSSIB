@@ -4,14 +4,23 @@ import numpy as np
 
 
 class RealSenseVis(object):
-    def __init__(self):
-        self.added_pc = False
+    def __init__(self, key_dict=None):
+        self.added_pc = {}
+        self.key_dict = key_dict
 
     def __enter__(self):
-        self.vis = o3d.visualization.Visualizer()
+        if self.key_dict is None:
+            self.vis = o3d.visualization.Visualizer()
+        else:
+            print("activate keycallback")
+            self.vis = o3d.visualization.VisualizerWithKeyCallback()
+            for (key, action) in self.key_dict.items():
+                print(key, action)
+                self.vis.register_key_callback(key, action)
+
         self.vis.create_window('SCAN', width=1280, height=720)
-        self.point_cloud = o3d.geometry.PointCloud()
-        self.added_pc = False
+        self.point_clouds = {}
+        self.added_pc = {}
 
         return self
 
@@ -19,15 +28,19 @@ class RealSenseVis(object):
         self.vis.destroy_window()
         del self.vis
 
-    def visualize_current(self, pcd):
-        self.point_cloud.points = pcd.points
-        self.point_cloud.colors = pcd.colors
+    def visualize_current(self, pcd, rs_id=0):
+        if not (rs_id in self.added_pc.keys()):
+            self.added_pc.setdefault(rs_id, False)
+            self.point_clouds.setdefault(rs_id, o3d.geometry.PointCloud())
 
-        if not self.added_pc and len(np.asarray(pcd.points)) > 0:
-            self.add_pcd(self.point_cloud)
-            self.added_pc = True
+        self.point_clouds[rs_id].points = pcd.points
+        self.point_clouds[rs_id].colors = pcd.colors
 
-        self.vis.update_geometry(self.point_cloud)
+        if not self.added_pc[rs_id] and len(np.asarray(pcd.points)) > 0:
+            self.add_pcd(self.point_clouds[rs_id])
+            self.added_pc[rs_id] = True
+
+        self.vis.update_geometry(self.point_clouds[rs_id])
         self.vis.poll_events()
         self.vis.update_renderer()
 

@@ -3,9 +3,19 @@ import numpy as np
 
 
 class RealSense(object):
+    def __init__(self, serial_num=False):
+        if serial_num:
+            self.use_serial = True
+            self.serial_num = serial_num
+        else:
+            self.use_serial = False
+
     def __enter__(self):
         self.pipeline = rs.pipeline()
         self.config = rs.config()
+        if self.use_serial:
+            self.config.enable_device(self.serial_num)
+
         self.config.enable_stream(rs.stream.color, 640, 480, rs.format.rgb8, 30)
         self.config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
         self.pipeline.start(self.config)
@@ -32,6 +42,3 @@ class RealSense(object):
         color_image = np.asanyarray(color_frame.get_data())
 
         return color_image, depth_image, profile.as_video_stream_profile().get_intrinsics()
-
-
-
