@@ -152,8 +152,10 @@ def register_keys(inputter: KeyInputter, step):
     # keyboard.on_press_key("k", lambda _: inputter.transform_with(-step * 10))
 
 
-def process_key_input(target, key_input: KeyInputter, rs: RealSense):
+def process_key_input(target, key_input: KeyInputter, rs: RealSense, color=None):
+    if color is None:
+        color = [255, 255, 255]
     (rgb, depth, ins) = rs.get_frame_image()
-    pcd = create_point_cloud(rgb, depth, ins, key_input.export_matrix(target))
+    pcd = create_point_cloud(rgb, depth, ins, key_input.export_matrix(target), color=color)
 
     return pcd
