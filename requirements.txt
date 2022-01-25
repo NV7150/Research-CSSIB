@@ -7,3 +7,4 @@ trimesh~=3.9.42
 imageio~=2.13.5
 pyzbar~=0.1.8
 pyqrcode~=1.2.1
+pyserial

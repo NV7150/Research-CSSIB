@@ -1,3 +1,5 @@
+import math
+
 import keyboard
 import numpy as np
 import threading
@@ -99,6 +101,13 @@ class KeyInputter:
         val_arr = np.array([[vals[i] for i in range(1, 4)], [vals[i] for i in range(4, 7)]])
         self.transform[int(vals[0])] = val_arr
 
+    def apply_angle(self, angle_mat, target):
+        prev = self.transform[target, Transform.ROTATION.value]
+        self.transform[target, Transform.ROTATION.value] += [angle_mat[0], prev[1], angle_mat[1]]
+
+    def apply_pos(self, pos, target):
+        self.transform[target, Transform.TRANSLATE.value] = pos
+
 
 def register_keys(inputter: KeyInputter, step):
     print(
@@ -159,3 +168,15 @@ def process_key_input(target, key_input: KeyInputter, rs: RealSense, color=None)
     pcd = create_point_cloud(rgb, depth, ins, key_input.export_matrix(target), color=color)
 
     return pcd
+
+
+def preprocess_angle(raw_angle):
+    angle = [raw_angle[1], 0, raw_angle[0]]
+    angle[1] += math.pi
+    angle[2] += math.pi
+
+    return np.array(angle)
+
+
+def preprocess_pos(raw_pos):
+    return np.array([-raw_pos[0], raw_pos[1], raw_pos[2]])
