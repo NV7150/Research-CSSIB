@@ -19,7 +19,7 @@ def define_qr_pos(frame_pathes, pcd):
         for qrcode in qrcodes:
             qr_pos = get_qr_from_frame(qrcode, frame)
 
-            (rc_pos, rc_dist, true_point) = ray_cast_qr(frame, qr_pos, pcd)
+            (rc_pos, rc_dist, true_point) = ray_cast_qr(frame, qr_pos, pcd, step=-0.02, th=0.01)
 
             if qrcode.value not in found_qrs.keys():
                 found_qrs.setdefault(qrcode.value, true_point)

@@ -1,3 +1,4 @@
+import datetime
 import glob
 
 from AccelSensor import AccelSensor
@@ -67,26 +68,31 @@ def simple_scan_vis():
                         rs_vis.visualize_current(pcd2, rs_id=1)
 
 
-def auto_regis_vis():
+def auto_regis_vis(auto_regis=True):
     inputter = KeyInputter(1, 1)
     key_dict = register_keys(inputter, 0.01)
     source, translation = load_pcd('sampleDatas/RoomScan.ply')
-    pos_dict = define_qr_pos(glob.glob("sampleDatas/RoomScan/frame*.json"), source)
-    # # pos = preprocess_pos(pos_dict['135322064678'])
-    pos = np.array(pos_dict['135322064678']) + translation
-    inputter.apply_pos(pos, 0)
+
+    if auto_regis:
+        pos_dict = define_qr_pos(glob.glob("sampleDatas/RoomScan/frame*.json"), source)
+        pos = np.array(pos_dict['135322064678']) + translation
+        inputter.apply_pos(pos, 0)
 
     with RealSense(serial_num='135322064678') as real_sense:
         with RealSenseVis(key_dict=key_dict) as rs_vis:
-            # with AccelSensor("COM3", 9600) as ac_sensor:
+            with AccelSensor("COM3", 9600) as ac_sensor:
                 rs_vis.add_pcd(source)
                 while not inputter.is_exit:
                     pcd = process_key_input(0, inputter, real_sense, color=[255, 0, 0])
 
-                    # angle = ac_sensor.get_xy_angles()
-                    # angle = np.array([0, 0, 0])
-                    # angle = preprocess_angle(angle)
-                    # inputter.apply_angle(angle, 0)
+                    if inputter.get_is_save():
+                        o3d.io.write_point_cloud(f"{str(datetime.datetime.now()).split()[-1].split('.')[-1]}.ply", pcd)
+
+                    if auto_regis:
+                        angle = ac_sensor.get_xy_angles()
+                        angle = preprocess_angle(angle)
+                        inputter.apply_angle(angle, 0)
+
                     if not (pcd is None):
                         rs_vis.visualize_current(pcd, rs_id=0)
 

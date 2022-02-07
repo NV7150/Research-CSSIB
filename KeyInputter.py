@@ -39,6 +39,10 @@ class KeyInputter:
             [0, 0, 0]
         ] for i in range(num)], dtype=float)
         print(self.transform)
+        self.transform_sup = np.array([[
+            [0, 0, 0],
+            [0, 0, 0]
+        ] for i in range(num)], dtype=float)
         self.lock = threading.Lock()
         self.pos_mode = Position.X
         self.trans_mode = Transform.TRANSLATE
@@ -46,6 +50,7 @@ class KeyInputter:
         self.target = 0
         self.n = num
         self.is_exit = False
+        self.is_save = False
 
     def change_mode(self, mode: Transform):
         with LockHandler(self.lock):
@@ -70,6 +75,7 @@ class KeyInputter:
             if self.trans_mode == Transform.ROTATION:
                 val *= self.step_rot
             self.transform[int(self.target), int(self.trans_mode.value), int(self.pos_mode.value)] += float(val)
+
             print(f"target: {self.target} transformed to {self.transform[self.target]}")
 
     def switch_target(self):
@@ -81,8 +87,9 @@ class KeyInputter:
 
     def export_matrix(self, target):
         with LockHandler(self.lock):
-            r = o3d.geometry.get_rotation_matrix_from_xyz(self.transform[target, Transform.ROTATION.value])
-            t = np.array(self.transform[target, Transform.TRANSLATE.value]).reshape([3, 1])
+            trans = self.transform + self.transform_sup
+            r = o3d.geometry.get_rotation_matrix_from_xyz(trans[target, Transform.ROTATION.value])
+            t = np.array(trans[target, Transform.TRANSLATE.value]).reshape([3, 1])
             rt = np.concatenate([r, t], axis=1)
             export_mat = np.concatenate([rt, np.array([[0, 0, 0, 1]])], axis=0, dtype=float)
         return export_mat
@@ -102,11 +109,20 @@ class KeyInputter:
         self.transform[int(vals[0])] = val_arr
 
     def apply_angle(self, angle_mat, target):
-        prev = self.transform[target, Transform.ROTATION.value]
-        self.transform[target, Transform.ROTATION.value] += [angle_mat[0], prev[1], angle_mat[1]]
+        prev = self.transform_sup[target, Transform.ROTATION.value]
+        self.transform_sup[target, Transform.ROTATION.value] = [angle_mat[0], prev[1], angle_mat[1]]
 
     def apply_pos(self, pos, target):
-        self.transform[target, Transform.TRANSLATE.value] = pos
+        self.transform_sup[target, Transform.TRANSLATE.value] = pos
+
+    def get_is_save(self):
+        if self.is_save:
+            self.is_save = False
+            return True
+        return False
+
+    def set_is_save(self):
+        self.is_save = True
 
 
 def register_keys(inputter: KeyInputter, step):
@@ -134,6 +150,7 @@ def register_keys(inputter: KeyInputter, step):
         ord("Q"): lambda_create(lambda: inputter.exit()),
         ord("S"): lambda_create(lambda: inputter.switch_target()),
         ord("I"): lambda_create(lambda: inputter.input_matrix()),
+        ord("S"): lambda_create(lambda: inputter.set_is_save()),
         ord("1"): lambda_create(lambda: inputter.transform_with(step)),
         ord("2"): lambda_create(lambda: inputter.transform_with(step * 3)),
         ord("3"): lambda_create(lambda: inputter.transform_with(step * 10)),
@@ -172,10 +189,9 @@ def process_key_input(target, key_input: KeyInputter, rs: RealSense, color=None)
 
 def preprocess_angle(raw_angle):
     angle = [raw_angle[1], 0, raw_angle[0]]
-    angle[1] += math.pi
-    angle[2] += math.pi
+    angle[0] += math.pi
 
-    return np.array(angle)
+    return -np.array(angle)
 
 
 def preprocess_pos(raw_pos):

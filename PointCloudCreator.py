@@ -4,8 +4,8 @@ import cv2
 
 
 def create_point_cloud(color_image, depth_image, intrinsics, r, color=[255, 255, 255], depth_scale=1000):
-    depth_image = np.asarray(cv2.flip(depth_image, 1))
-    color_image = np.asarray(cv2.flip(color_image, 1))
+    # depth_image = np.asarray(cv2.flip(depth_image, 1))
+    # color_image = np.asarray(cv2.flip(color_image, 1))
 
     img_depth = o3d.geometry.Image(depth_image)
     img_color = o3d.geometry.Image(color_image)
