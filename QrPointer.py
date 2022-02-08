@@ -1,13 +1,17 @@
 import numpy as np
 import math
+import open3d as o3d
 
 from FrameLoader import Frame
 from QrCodeDecoder import QRCode
 
 
 # frame中のQRコードを発見し，QRコード方向にzだけいった地点の三次元座標を返す
-def get_qr_from_frame(qrcode: QRCode, frame: Frame, z=1):
-    center = [qrcode.pos[0] - qrcode.size[0] / 2, qrcode.pos[1] - qrcode.size[1] / 2]
+def get_qr_from_frame(qrcode: QRCode, frame: Frame, z=1, trans=None):
+    if trans is None:
+        trans = np.zeros(shape=3)
+
+    center = qrcode.get_point()
     inv_int = np.linalg.inv(frame.intrinsics)
     image_pos = np.array([[center[0]], [center[1]], [1]]) * z
 
@@ -17,7 +21,7 @@ def get_qr_from_frame(qrcode: QRCode, frame: Frame, z=1):
     position_global_pos = np.dot(frame.pose, position_camera_pos)
     position_global_pos = position_global_pos.flatten()[:3]
 
-    return -(position_global_pos - frame.pos) + frame.pos
+    return -(position_global_pos - frame.pos) + frame.pos + trans
 
 
 def cal_dist(p1, p2):
@@ -70,4 +74,23 @@ def ray_cast_qr(frame: Frame, point_dist, pcd, step=-0.025, th=0.01):
 
     return res_point, res_d, res_true
 
+
+def ray_cast_qr_mesh(frame: Frame, destination, mesh_scene, trans=None):
+    if trans is None:
+        trans = np.arange([0, 0, 0])
+
+    origin_pos = frame.pos + trans
+
+    vec_to_dest = (origin_pos - destination)
+    vec_l = np.linalg.norm(vec_to_dest)
+    direction = vec_to_dest / vec_l
+
+    ray_vec = np.concatenate([origin_pos, -direction])
+    ray = o3d.core.Tensor([ray_vec], dtype=o3d.core.Dtype.Float32)
+    ans = mesh_scene.cast_rays(ray)
+
+    hit_dist = ans['t_hit'].numpy()[0]
+    hit_pos = -direction * hit_dist + origin_pos
+
+    return hit_pos
 

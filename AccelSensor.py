@@ -6,14 +6,21 @@ class AccelSensor:
     def __init__(self, port, baudrate):
         self.port = port
         self.baudrate = baudrate
+        self.ser = None
 
     def __enter__(self):
-        self.ser = serial.Serial(self.port, self.baudrate, timeout=None)
-        self.ser.setDTR(False)
+        self.open_serial()
 
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close_serial()
+
+    def open_serial(self):
+        self.ser = serial.Serial(self.port, self.baudrate, timeout=None)
+        self.ser.setDTR(False)
+
+    def close_serial(self):
         self.ser.close()
 
     def get_xy_angles(self):
